@@ -1,6 +1,5 @@
 package silverstar.leariningkotlin.textadventure.autoconverted
 
-import com.timbuchalka.Location
 import java.util.*
 
 object Main {

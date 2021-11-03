@@ -1,6 +1,5 @@
 package silverstar.leariningkotlin.textadventure.autoconverted
 
-import com.timbuchalka.Location
 import java.io.BufferedReader
 import java.io.FileReader
 import java.io.IOException
@@ -15,7 +14,7 @@ object Locations {
         // Read locations
         try {
             scanner = Scanner(FileReader("locations_big.txt"))
-            scanner.useDelimiter(",")
+            scanner.useDelimiter(";")
             while (scanner.hasNextLine()) {
                 val loc = scanner.nextInt()
                 scanner.skip(scanner.delimiter())

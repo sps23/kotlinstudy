@@ -8,7 +8,7 @@ fun readLocationInfo() : Map<Int, KotlinLocation> {
     val locations = mutableMapOf<Int, KotlinLocation>()
 
     File("locations_big.txt").reader().forEachLine {
-        val tokens = it.split("`")
+        val tokens = it.split(";")
 
         val location = KotlinLocation(tokens[0].toInt(), tokens[1])
         locations[location.locationID] = location

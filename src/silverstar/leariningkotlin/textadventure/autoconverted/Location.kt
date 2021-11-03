@@ -7,7 +7,7 @@ class Location(val locationID: Int, val description: String) {
         return HashMap(exits)
     }
 
-    protected fun addExit(direction: String?, location: Int) {
+    fun addExit(direction: String?, location: Int) {
         exits[direction] = location
     }
 
