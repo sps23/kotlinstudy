@@ -1,4 +1,4 @@
-package silverstar.leariningkotlin.textadventure
+package silverstar.learningkotlin.textadventure
 
 import java.io.File
 

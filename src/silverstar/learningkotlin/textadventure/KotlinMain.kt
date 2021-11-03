@@ -1,7 +1,7 @@
-package silverstar.leariningkotlin.textadventure
+package silverstar.learningkotlin.textadventure
 
 
-fun main(args: Array<String>) {
+fun main() {
 
     val locations = readLocationInfo()
     var loc = 64

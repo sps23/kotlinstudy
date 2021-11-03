@@ -1,4 +1,4 @@
-package silverstar.leariningkotlin.textadventure
+package silverstar.learningkotlin.textadventure
 
 
 data class KotlinLocation(val locationID: Int, val description: String) {

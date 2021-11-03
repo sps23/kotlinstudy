@@ -1,4 +1,4 @@
-package silverstar.leariningkotlin.textadventure.autoconverted
+package silverstar.learningkotlin.textadventure.autoconverted
 
 import java.util.*
 

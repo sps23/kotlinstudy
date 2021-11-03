@@ -1,4 +1,4 @@
-package silverstar.leariningkotlin.textadventure.autoconverted
+package silverstar.learningkotlin.textadventure.autoconverted
 
 
 class Location(val locationID: Int, val description: String) {
