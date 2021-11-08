@@ -11,9 +11,14 @@ fun main() {
     // no need to use Secret
     CompanionObjectExample2.Secret.printPasswordEncrypted()
 
-    println(FactoryCompanionObjectExample("Test"))
-    println(FactoryCompanionObjectExample.factory("Test", false))
-    println(FactoryCompanionObjectExample.factory("Test", true))
+    println(FactoryCompanionObjectExample1("Test"))
+    println(FactoryCompanionObjectExample1.factory("Test", false))
+    println(FactoryCompanionObjectExample1.factory("Test", true))
+
+    // println(FactoryCompanionObjectExample2("Test")) // we cannot do that
+    println(FactoryCompanionObjectExample2.factory1("Test")) // we have to use factory
+    println(FactoryCompanionObjectExample2.factory2("Test", false))
+    println(FactoryCompanionObjectExample2.factory2("Test", true))
 }
 
 // we cannot have static class members
@@ -43,13 +48,28 @@ class CompanionObjectExample2 {
 }
 
 // default constructor
-data class FactoryCompanionObjectExample(val s: String) {
+// we can still create objects with default constructor
+data class FactoryCompanionObjectExample1(val s: String) {
 
     companion object {
         // factory method inside companion object
-        fun factory(s: String, uppercase: Boolean): FactoryCompanionObjectExample {
+        fun factory(s: String, uppercase: Boolean): FactoryCompanionObjectExample1 {
             val str = if (uppercase) s.uppercase() else s.lowercase()
-            return FactoryCompanionObjectExample(str)
+            return FactoryCompanionObjectExample1(str)
+        }
+    }
+}
+
+// default constructor is private
+// we can only use factory method from companion object
+data class FactoryCompanionObjectExample2 private constructor(val s: String) {
+
+    companion object {
+        // factory methods inside companion object
+        fun factory1(s: String): FactoryCompanionObjectExample1 = FactoryCompanionObjectExample1(s)
+        fun factory2(s: String, uppercase: Boolean): FactoryCompanionObjectExample1 {
+            val str = if (uppercase) s.uppercase() else s.lowercase()
+            return FactoryCompanionObjectExample1(str)
         }
     }
 }
