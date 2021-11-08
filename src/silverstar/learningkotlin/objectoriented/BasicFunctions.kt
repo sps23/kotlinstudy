@@ -30,6 +30,11 @@ fun test1() = 3 * 5
 class Human(val name: String) {
 
     fun nameUppercase() = name.uppercase()
+
+    // use 'return' if function is an expression {}
+    fun nameLowercase(): String {
+        return name.lowercase()
+    }
 }
 
 // variable argument, only one vararg in the function signature
