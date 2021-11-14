@@ -5,13 +5,7 @@ fun main() {
     // run lambda directly using 'run' command
     run { println("Hello Lambdas !!!") }
 
-    val employees =
-        listOf<LambdaEmployee>(
-            LambdaEmployee("A", "AAA", 2020),
-            LambdaEmployee("B", "BBB", 2014),
-            LambdaEmployee("C", "CCC", 2017),
-            LambdaEmployee("A", "CCC", 2019),
-        )
+    val employees = LambdaEmployee.employees
 
     // explicitly use lambda argument 'e'
     println(employees.minByOrNull { e -> e.startYear })
@@ -32,5 +26,3 @@ fun main() {
 }
 
 fun topLevelFun() = println("topLevelFun !!!")
-
-data class LambdaEmployee(val firstName: String, val lastName: String, val startYear: Int)
