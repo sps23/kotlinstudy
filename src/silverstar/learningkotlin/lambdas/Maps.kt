@@ -51,8 +51,6 @@ fun main() {
     println(listOf(colorC, modelC, yearC))
 }
 
-data class Car(val color: String, val model: String, val year: Int)
-
 class CarC(val color: String, val model: String, val year: Int) {
 
     operator fun component1() = color
