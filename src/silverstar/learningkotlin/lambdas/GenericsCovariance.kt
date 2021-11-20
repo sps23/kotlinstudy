@@ -44,9 +44,6 @@ fun tendGarden(roseGarden: Garden<Rose>) {
     waterGarden(roseGarden)
 }
 
-open class Flower
-class Rose : Flower()
-
 // covariant class Garden
 // can be used in only in the 'out' position
 // it can be in return position
