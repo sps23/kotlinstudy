@@ -1,6 +1,5 @@
 package silverstar.learningkotlin.textadventure
 
-
 fun main() {
 
     val locations = readLocationInfo()
@@ -8,6 +7,7 @@ fun main() {
 
     while (true) {
 
+        // we should never get null back, so we return default Location
         val location = locations[loc] ?: KotlinLocation(0,
                        "Sorry, something went wrong, so the game will terminate")
 
@@ -22,9 +22,9 @@ fun main() {
             print("$it, ")
         }
 
-        val direction = readLine()?.uppercase() ?: "Z"
+        val direction = readLine()?.uppercase() ?: "Z" // default direction
         if (location.exits.containsKey(direction)) {
-            loc = location.exits[direction]!!
+            loc = location.exits[direction]!! // we can use not null assertion if we are sure no null
         }
         else {
             println("You can't go in that direction")
