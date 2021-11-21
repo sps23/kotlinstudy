@@ -1,4 +1,6 @@
 @file:JvmName("StaticCar") // name that we will use for static members
+// the default name in Java for the Kotlin file is <filename>Kt
+// you can change that by using annotation @file:JvmName
 
 package silverstar.learningkotlin.javainterop
 
