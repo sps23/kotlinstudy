@@ -9,17 +9,10 @@ A valid identifier is a  non-empty string that
 
 fun isValidIdentifier(s: String): Boolean {
     val nonEmpty = s.isNotEmpty()
-    fun validFirstChar() =
-        when (s[0]) {
-            '_' -> true
-            in 'a'..'z' -> true
-            in 'A'..'z' -> true
-            else -> false
-        }
+    fun validFirstChar(c: Char) = c == '_' || c.isLetter()
+    fun validNextChar(c: Char) = c == '_' || c.isLetterOrDigit()
 
-    fun allDigitsLettersOrUnderscores() = s.drop(1).all { c -> c.isLetterOrDigit() || c == '_' }
-
-    return nonEmpty && validFirstChar() && allDigitsLettersOrUnderscores()
+    return nonEmpty && validFirstChar(s[0]) && s.drop(1).all { validNextChar(it) }
 }
 
 fun main() {
