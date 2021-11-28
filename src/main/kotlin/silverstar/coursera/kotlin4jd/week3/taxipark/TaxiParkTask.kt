@@ -5,13 +5,14 @@ package silverstar.coursera.kotlin4jd.week3.taxipark
  */
 fun TaxiPark.findFakeDrivers(): Set<Driver> =
     this.allDrivers.filter { driver -> this.trips.none { trip -> trip.driver == driver } }.toSet()
+// this.allDrivers.minus(this.trips.map { it.driver }.toSet())
 
 /*
  * Task #2. Find all the clients who completed at least the given number of trips.
  */
 fun TaxiPark.findFaithfulPassengers(minTrips: Int): Set<Passenger> =
     this.allPassengers
-        .filter { p -> this.trips.count { t -> t.passengers.contains(p) } >= minTrips }
+        .filter { p -> this.trips.count { t -> p in t.passengers } >= minTrips }
         .toSet()
 
 /*
@@ -19,22 +20,30 @@ fun TaxiPark.findFaithfulPassengers(minTrips: Int): Set<Passenger> =
  */
 fun TaxiPark.findFrequentPassengers(driver: Driver): Set<Passenger> =
     this.allPassengers
-        .filter { p ->
-            this.trips.count { t -> t.passengers.contains(p) && t.driver == driver } > 1
-        }
+        .filter { p -> this.trips.count { t -> t.driver == driver && p in t.passengers } > 1 }
         .toSet()
 
 /*
  * Task #4. Find the passengers who had a discount for majority of their trips.
  */
 fun TaxiPark.findSmartPassengers(): Set<Passenger> {
-    fun discountForMajorityTrips(passenger: Passenger): Boolean {
-        val allPassengerTrips = this.trips.filter { t -> t.passengers.contains(passenger) }
-        val discountedCount = allPassengerTrips.count { it.discount != null }
-        return discountedCount > allPassengerTrips.size / 2
-    }
+    val (tripsWithDiscount, tripsWithoutDiscount) = this.trips.partition { it.discount != null }
 
-    return this.allPassengers.filter { discountForMajorityTrips(it) }.toSet()
+    return this.allPassengers
+        .filter { p ->
+            tripsWithDiscount.count { p in it.passengers } >
+                tripsWithoutDiscount.count { p in it.passengers }
+        }
+        .toSet()
+
+    //    fun discountForMajorityTrips(passenger: Passenger): Boolean {
+    //        val allPassengerTrips = this.trips.filter { t -> passenger in t.passengers }
+    //        val discountedCount = allPassengerTrips.count { it.discount != null }
+    //        return discountedCount > allPassengerTrips.size / 2
+    //    }
+    //
+    //
+    //    return this.allPassengers.filter { discountForMajorityTrips(it) }.toSet()
 }
 
 /*
@@ -58,9 +67,7 @@ fun TaxiPark.checkParetoPrinciple(): Boolean =
     } else {
         val incomePerDriver =
             this.allDrivers.associateWith { driver ->
-                this.trips.filter { trip -> trip.driver == driver }.sumByDouble { trip ->
-                    trip.cost
-                }
+                this.trips.filter { trip -> trip.driver == driver }.sumOf(Trip::cost)
             }
         val incomesSorted = incomePerDriver.values.sortedDescending()
         val totalIncome = incomesSorted.sum()
