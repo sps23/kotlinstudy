@@ -1,6 +1,6 @@
 package silverstar.udemy.kotlin4jd.loops
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException
+import java.lang.RuntimeException
 
 fun main() {
 
@@ -31,4 +31,4 @@ fun getNumberNullable(s: String): Int? =
     }
 
 // use 'Nothing' when you want to show that fun is not returning anything
-fun notImplementedYet(s: String): Nothing = throw NotImplementedException()
+fun notImplementedYet(s: String): Nothing = throw RuntimeException()
