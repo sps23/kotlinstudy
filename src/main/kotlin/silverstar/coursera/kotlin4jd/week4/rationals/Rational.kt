@@ -1,45 +1,47 @@
 package silverstar.coursera.kotlin4jd.week4.rationals
 
+import java.math.BigDecimal
 import java.math.BigInteger
 
 class RationalRange(override val start: Rational, override val endInclusive: Rational) :
     ClosedRange<Rational>
 
-class Rational(private val numerator: BigInteger, private val denominator: BigInteger) :
+data class Rational
+private constructor(private val numerator: BigInteger, private val denominator: BigInteger) :
     Comparable<Rational> {
 
     companion object {
-        val ZERO = Rational(BigInteger.ZERO, BigInteger.ONE)
         fun integer(numerator: BigInteger): Rational = Rational(numerator, BigInteger.ONE)
-    }
 
-    fun normalized(): Rational {
-        val gcd = numerator.gcd(denominator)
-        return if (gcd > BigInteger.ZERO) {
-            Rational(numerator / gcd, denominator / gcd)
-        } else {
-            Rational(numerator, denominator)
+        fun create(n: BigInteger, d: BigInteger): Rational {
+            require(d != BigDecimal.ZERO) { "Denominator must be non-zero" }
+            val gcd = n.gcd(d)
+            val sign = d.signum().toBigInteger()
+            return Rational(n / gcd * sign, d / gcd * sign)
         }
     }
 
     operator fun plus(r: Rational): Rational {
         val a = this.toComDen(r)
         val b = r.toComDen(this)
-        val result = Rational(a.numerator + b.numerator, a.denominator)
-        return result.normalized()
+        return create(a.numerator + b.numerator, a.denominator)
     }
+
     operator fun minus(r: Rational): Rational {
         val a = this.toComDen(r)
         val b = r.toComDen(this)
-        val result = Rational(a.numerator - b.numerator, a.denominator)
-        return result.normalized()
+        return create(a.numerator - b.numerator, a.denominator)
     }
+
     operator fun times(r: Rational): Rational =
-        Rational(this.numerator * r.numerator, this.denominator * r.denominator).normalized()
-    operator fun div(r: Rational): Rational = this * Rational(r.denominator, r.numerator)
+        create(this.numerator * r.numerator, this.denominator * r.denominator)
+
+    operator fun div(r: Rational): Rational = this * create(r.denominator, r.numerator)
+
     operator fun rangeTo(r: Rational): ClosedRange<Rational> =
         RationalRange(this.toComDen(r), r.toComDen(this))
-    operator fun unaryMinus(): Rational = Rational(numerator.negate(), denominator)
+
+    operator fun unaryMinus(): Rational = create(numerator.negate(), denominator)
 
     override fun compareTo(other: Rational): Int {
         val a = this.toComDen(other)
@@ -50,53 +52,24 @@ class Rational(private val numerator: BigInteger, private val denominator: BigIn
     override fun toString(): String =
         if (denominator == BigInteger.ONE) "$numerator" else "$numerator/$denominator"
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as Rational
-
-        if (numerator != other.numerator) return false
-        if (denominator != other.denominator) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = numerator.hashCode()
-        result = 31 * result + denominator.hashCode()
-        return result
-    }
-
     // toCommonDenominator
     private fun toComDen(r: Rational): Rational =
         Rational(numerator * r.denominator, denominator * r.denominator)
 }
 
-infix fun Int.divBy(i: Int): Rational = "$this/$i".toRational()
+infix fun Int.divBy(i: Int): Rational = Rational.create(this.toBigInteger(), i.toBigInteger())
 
-infix fun Long.divBy(l: Long): Rational = "$this/$l".toRational()
+infix fun Long.divBy(l: Long): Rational = Rational.create(this.toBigInteger(), l.toBigInteger())
 
-infix fun BigInteger.divBy(bi: BigInteger): Rational = "$this/$bi".toRational()
+infix fun BigInteger.divBy(bi: BigInteger): Rational = Rational.create(this, bi)
 
-fun String.toRational(): Rational {
+fun String.toRational(): Rational =
     if (this.contains('/')) {
         val (n, d) = this.trim().split('/')
-        val num = n.toBigInteger()
-        val den = d.toBigInteger()
-        val result =
-            when {
-                num == BigInteger.ZERO -> Rational.ZERO
-                den == BigInteger.ONE -> Rational.integer(num)
-                den < BigInteger.ZERO -> Rational(num.negate(), den.negate())
-                den > BigInteger.ZERO -> Rational(num, den)
-                else -> throw IllegalArgumentException()
-            }
-        return result.normalized()
+        Rational.create(n.toBigInteger(), d.toBigInteger())
     } else {
-        return Rational.integer(this.toBigInteger())
+        Rational.integer(this.toBigInteger())
     }
-}
 
 fun main() {
     val half = 1 divBy 2
