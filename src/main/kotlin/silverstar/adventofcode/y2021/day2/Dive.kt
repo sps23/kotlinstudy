@@ -12,7 +12,6 @@ up X decreases the depth by X units.
 Note that since you're on a submarine, down and up affect your depth, and so they have the opposite result of what you might expect.
 
 The submarine seems to already have a planned course (your puzzle input). You should probably figure out where it's going. For example:
-
 forward 5
 down 5
 forward 8
@@ -30,49 +29,93 @@ forward 2 adds 2 to your horizontal position, a total of 15.
 After following these instructions, you would have a horizontal position of 15 and a depth of 10. (Multiplying these together produces 150.)
 
 Calculate the horizontal position and depth you would have after following the planned course. What do you get if you multiply your final horizontal position by your final depth?
+
+ --- Part Two ---
+Based on your calculations, the planned course doesn't seem to make any sense. You find the submarine manual and discover that the process is actually slightly more complicated.
+
+In addition to horizontal position and depth, you'll also need to track a third value, aim, which also starts at 0. The commands also mean something entirely different than you first thought:
+
+down X increases your aim by X units.
+up X decreases your aim by X units.
+forward X does two things:
+It increases your horizontal position by X units.
+It increases your depth by your aim multiplied by X.
+Again note that since you're on a submarine, down and up do the opposite of what you might expect: "down" means aiming in the positive direction.
+
+Now, the above example does something different:
+
+forward 5 adds 5 to your horizontal position, a total of 5. Because your aim is 0, your depth does not change.
+down 5 adds 5 to your aim, resulting in a value of 5.
+forward 8 adds 8 to your horizontal position, a total of 13. Because your aim is 5, your depth increases by 8*5=40.
+up 3 decreases your aim by 3, resulting in a value of 2.
+down 8 adds 8 to your aim, resulting in a value of 10.
+forward 2 adds 2 to your horizontal position, a total of 15. Because your aim is 10, your depth increases by 2*10=20 to a total of 60.
+After following these new instructions, you would have a horizontal position of 15 and a depth of 60. (Multiplying these produces 900.)
+
+Using this new interpretation of the commands, calculate the horizontal position and depth you would have after following the planned course. What do you get if you multiply your final horizontal position by your final depth?
+
  */
 
 fun main() {
-    val sampleInput = sequenceOf("forward 5", "down 5", "forward 8", "up 3", "down 8", "forward 2")
-    fun readInput(): Sequence<String> =
-        {}.javaClass.getResourceAsStream("/Dive.txt")?.bufferedReader()?.lineSequence()
-            ?: sequenceOf()
+  val sampleInput = sequenceOf("forward 5", "down 5", "forward 8", "up 3", "down 8", "forward 2")
+  fun readInput(): Sequence<String> =
+      {}.javaClass.getResourceAsStream("/Dive.txt")?.bufferedReader()?.lineSequence()
+          ?: sequenceOf()
 
-    // Part One
-    println(pilotResult(sampleInput)) // expected 150
-    println(pilotResult(readInput())) // expected 1654760
+  // Part One
+  println(pilot(sampleInput).result) // expected 150
+  println(pilot(readInput()).result) // expected 1654760
+
+  // Part Two
+  println(pilot2(sampleInput).result) // expected 900
+  println(pilot2(readInput()).result) // expected 1956047400
 }
 
 fun pilot(s: Sequence<String>): Position =
     s.map { Movement.from(it) }.fold(Position(0, 0)) { position, move -> position.makeMove(move) }
 
-fun pilotResult(s: Sequence<String>): Int {
-    val position = pilot(s)
-    return position.horizontal * position.depth
-}
+fun pilot2(s: Sequence<String>): Position2 =
+    s.map { Movement.from(it) }.fold(Position2(0, 0, 0)) { position, move ->
+      position.makeMove(move)
+    }
 
 data class Position(val horizontal: Int, val depth: Int) {
 
-    fun makeMove(move: Movement): Position =
-        when (move.type) {
-            MovementType.FORWARD -> this.copy(horizontal = horizontal + move.step)
-            MovementType.DOWN -> this.copy(depth = depth + move.step)
-            MovementType.UP -> this.copy(depth = depth - move.step)
-        }
+  val result = horizontal * depth
+
+  fun makeMove(move: Movement): Position =
+      when (move.type) {
+        MovementType.FORWARD -> this.copy(horizontal = horizontal + move.step)
+        MovementType.DOWN -> this.copy(depth = depth + move.step)
+        MovementType.UP -> this.copy(depth = depth - move.step)
+      }
+}
+
+data class Position2(val horizontal: Int, val depth: Int, val aim: Int) {
+
+  val result = horizontal * depth
+
+  fun makeMove(move: Movement): Position2 =
+      when (move.type) {
+        MovementType.FORWARD ->
+            this.copy(horizontal = horizontal + move.step, depth = depth + aim * move.step)
+        MovementType.DOWN -> this.copy(aim = aim + move.step)
+        MovementType.UP -> this.copy(aim = aim - move.step)
+      }
 }
 
 enum class MovementType {
-    FORWARD,
-    DOWN,
-    UP
+  FORWARD,
+  DOWN,
+  UP
 }
 
 data class Movement(val type: MovementType, val step: Int) {
 
-    companion object {
-        fun from(s: String): Movement {
-            val (type, step) = s.split(' ')
-            return Movement(MovementType.valueOf(type.uppercase()), step.toInt())
-        }
+  companion object {
+    fun from(s: String): Movement {
+      val (type, step) = s.split(' ')
+      return Movement(MovementType.valueOf(type.uppercase()), step.toInt())
     }
+  }
 }
