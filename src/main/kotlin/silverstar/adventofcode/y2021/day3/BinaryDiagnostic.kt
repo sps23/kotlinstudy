@@ -54,16 +54,25 @@ fun main() {
           "11001",
           "00010",
           "01010")
-  fun readInput(): Sequence<String> =
-      {}.javaClass.getResourceAsStream("/BinaryDiagnostic.txt")?.bufferedReader()?.lineSequence()
-          ?: sequenceOf()
+  val readInput: () -> Sequence<String> = {
+    {}.javaClass.getResourceAsStream("/BinaryDiagnostic.txt")?.bufferedReader()?.lineSequence()
+        ?: sequenceOf()
+  }
 
+  // Part 1
   println(calculatePowerConsumption(sampleInput)) // expected 198
   println(calculatePowerConsumption(readInput())) // expected 4160394
+
+  // Part 2
+  println(calculateLifeSupportRating(sampleInput)) // expected 230
+  println(calculateLifeSupportRating(readInput())) // expected 4125600
 }
 
 fun calculatePowerConsumption(input: Sequence<String>): Int =
     input.map { BitCount.create(it) }.reduce { acc, bitCount -> acc + bitCount }.powerConsumption
+
+fun calculateLifeSupportRating(input: Sequence<String>): Int =
+    BitCriteria(input).lifeSupportRating
 
 data class BitCount private constructor(private val bitCount: List<Int>) {
 
@@ -72,7 +81,7 @@ data class BitCount private constructor(private val bitCount: List<Int>) {
   val powerConsumption: Int
     get() = this.gamma * this.epsilon
 
-  private fun bitCountFold(operation: (acc: StringBuilder, Int) -> StringBuilder): Int =
+  private fun bitCountFold(operation: (StringBuilder, Int) -> StringBuilder): Int =
       bitCount.fold(StringBuilder(), operation).toString().toInt(2)
 
   private val gamma: Int = bitCountFold { acc, count ->
@@ -100,4 +109,51 @@ data class BitCount private constructor(private val bitCount: List<Int>) {
               }
             })
   }
+}
+
+class BitCriteria(readDiagnosticReport: Sequence<String>) {
+
+  data class Counter(
+      val countZero: Int,
+      val countOne: Int,
+      val havingZero: Sequence<String>,
+      val havingOne: Sequence<String>
+  ) {
+
+    val keepOxygen: Sequence<String> = if (countZero > countOne) havingZero else havingOne
+    val keepCO2: Sequence<String> = if (countZero > countOne) havingOne else havingZero
+
+    fun createUpdated(c: Char, s: String): Counter =
+        when (c) {
+          '0' -> copy(countZero = countZero + 1, havingZero = havingZero + s)
+          else -> copy(countOne = countOne + 1, havingOne = havingOne + s)
+        }
+
+    companion object {
+      val initial: Counter = Counter(0, 0, sequenceOf(), sequenceOf())
+    }
+  }
+
+  val lifeSupportRating: Int
+    get() = this.oxygenGeneratorRating * co2ScrubberRating
+
+  private fun recursion(
+      index: Int,
+      counter: Counter,
+      input: Sequence<String>,
+      op: (Counter) -> Sequence<String>
+  ): Int =
+      if (input.count() == 1) input.first().toInt(2)
+      else {
+        val updatedCounter = input.fold(counter) { c, s -> c.createUpdated(s[index], s) }
+        recursion(index + 1, Counter.initial, op(updatedCounter), op)
+      }
+
+    private val firstCounter = readDiagnosticReport.fold(Counter.initial) { c, s -> c.createUpdated(s[0], s) }
+
+  private val oxygenGeneratorRating: Int =
+      recursion(1, Counter.initial, firstCounter.keepOxygen) { c -> c.keepOxygen }
+
+  private val co2ScrubberRating: Int =
+      recursion(1, Counter.initial, firstCounter.keepCO2) { c -> c.keepCO2 }
 }
