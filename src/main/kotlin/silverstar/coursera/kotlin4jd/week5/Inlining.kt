@@ -28,7 +28,3 @@ inline fun <T> Iterable<T>.filter(predicate: (T) -> Boolean): List<T> {
     }
     return destination
 }
-
-infix fun <T> T.eq(other: T) {
-    if (this == other) println("OK") else println("Error: $this != $other")
-}
