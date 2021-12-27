@@ -80,107 +80,105 @@ fun main() {
 22 11 13  6  5
  2  0 12  3  7"""
 
-    sampleInput.toBingoGame()
+    println(sampleInput.toBingoGame().play())
 }
 
-data class Cell(val i: Int, val j: Int) {
-    override fun toString() = "($i, $j)"
-}
-
-interface SquareBoard {
-    val width: Int
-
-    fun getCellOrNull(i: Int, j: Int): Cell?
-    fun getCell(i: Int, j: Int): Cell
-
-    fun getAllCells(): Collection<Cell>
-
-    fun getRow(i: Int, jRange: IntProgression): List<Cell>
-    fun getColumn(iRange: IntProgression, j: Int): List<Cell>
-}
-
-interface GameBoard<T> : SquareBoard {
-
-    operator fun get(cell: Cell): T?
-    operator fun set(cell: Cell, value: T?)
-
-    fun filter(predicate: (T?) -> Boolean): Collection<Cell>
-    fun find(predicate: (T?) -> Boolean): Cell?
-}
-
-open class SquareBoardImpl(override val width: Int) : SquareBoard {
-
-    private val cells: MutableMap<Pair<Int, Int>, Cell> = mutableMapOf()
-
-    init {
-        for (i in 1..width) {
-            for (j in 1..width) {
-                cells[Pair(i, j)] = Cell(i, j)
-            }
-        }
-    }
-
-    override fun getCellOrNull(i: Int, j: Int): Cell? =
-        if (i > width || j > width || i <= 0 || j <= 0) {
-            null
-        } else {
-            cells[Pair(i, j)]
-        }
-
-    override fun getCell(i: Int, j: Int): Cell =
-        if (i > width || j > width || i <= 0 || j <= 0) {
-            throw IllegalArgumentException()
-        } else {
-            cells[Pair(i, j)]!!
-        }
-
-    override fun getAllCells(): Collection<Cell> = cells.values
-
-    override fun getRow(i: Int, jRange: IntProgression): List<Cell> =
-        jRange.mapNotNull { getCellOrNull(i, it) }
-
-    override fun getColumn(iRange: IntProgression, j: Int): List<Cell> =
-        iRange.mapNotNull { getCellOrNull(it, j) }
-}
-
-class GameBoardImp<T>(width: Int) : GameBoard<T>, SquareBoardImpl(width) {
-
-    private val cells: MutableMap<Cell, T?> = mutableMapOf()
-
-    init {
-        for (i in 1..width) {
-            for (j in 1..width) {
-                cells[getCell(i, j)] = null
-            }
-        }
-    }
-
-    override fun get(cell: Cell): T? = cells.getOrDefault(cell, null)
-
-    override fun set(cell: Cell, value: T?) {
-        cells[cell] = value
-    }
-
-    override fun filter(predicate: (T?) -> Boolean): Collection<Cell> =
-        cells.filterValues(predicate).map { it.key }
-
-    override fun find(predicate: (T?) -> Boolean): Cell? = filter(predicate).firstOrNull()
-}
-
-interface Game {
-    fun initialize()
+interface BingoGame {
+    fun printGame(): Unit
+    fun canDrawNext(): Boolean
     fun drawNext()
     fun hasWon(): Boolean
-    operator fun get(i: Int, j: Int): Int?
+    fun score(): Int
+
+    fun play(): Int {
+        do {
+            printGame()
+            drawNext()
+        } while(!hasWon() && canDrawNext())
+//        while (!hasWon() && canDrawNext()) {
+//            printGame()
+//            drawNext()
+//        }
+        return if (hasWon()) score() else -1
+    }
 }
 
-class BingoGame(private val draw: List<Int>, private val boards: List<List<Int>>) {}
+interface BingoBoard {
+    val boardSize: Int
+    fun printBoard(): Unit
+    fun mark(number: Int): BingoBoard
+    fun hasWon(): Boolean
+    fun sumOfAllUnmarked(): Int
+    fun score(lastDrawn: Int): Int = sumOfAllUnmarked() * lastDrawn
+}
 
-fun String.toBingoGame(): BingoGame {
+class BingoBoardImpl(private val board: List<Int>) : BingoBoard {
+    override val boardSize = 5
+    override fun printBoard() {
+        println(board.joinToString("; "))
+    }
+
+    override fun mark(number: Int): BingoBoard =
+        BingoBoardImpl(board.fold(listOf()) { acc, i -> if (i == number) acc + -i else acc + i })
+
+    private fun wonRow(): Boolean =
+        (0 until boardSize).step(boardSize).any {
+            board.subList(it, it + boardSize - 1).all { it < 0 }
+        }
+
+    private fun wonColumn(): Boolean =
+        (0 until boardSize).any { col ->
+            (0 until boardSize)
+                .map { row ->
+                    val index = col + row * boardSize
+                    board.get(index)
+                }
+                .all { it < 0 }
+        }
+
+    override fun hasWon(): Boolean {
+        println("${wonRow()}; ${wonColumn()}")
+        return wonRow() || wonColumn()
+    }
+
+    override fun sumOfAllUnmarked(): Int {
+        return board.sumOf { if(it > 0) it else 0 }
+    }
+}
+
+class BingoGameImpl(private val draw: List<Int>, private val boards: List<BingoBoard>, currentNumber: Int? = null) : BingoGame {
+    private var currentDraw = draw.toList()
+    private var currentBoards = boards.toList()
+
+    override fun printGame() {
+        currentBoards.forEach { it.printBoard() }
+        println(currentDraw.joinToString("; "))
+        println()
+    }
+
+    override fun canDrawNext(): Boolean = currentDraw.isNotEmpty()
+
+    override fun drawNext() {
+        val number = currentDraw.firstOrNull()
+        if (number != null) {
+            currentDraw = currentDraw.drop(1)
+            currentBoards = currentBoards.map { it.mark(number) }
+        }
+    }
+
+    override fun hasWon(): Boolean = currentBoards.any { it.hasWon() }
+
+    override fun score(): Int =
+        currentBoards.firstOrNull { it.hasWon() }?.score(currentDraw.first()) ?: -1
+}
+
+fun String.toBingoGame(): BingoGameImpl {
     val split: List<String> = this.split("\n\n")
     val draw: List<Int> = split.first().split(',').map { it.trim().toInt() }
     val boards: List<List<Int>> =
         split.drop(1).map { it.trim().split("\\s+".toRegex()).map { it.trim().toInt() } }
-    boards.forEach { println(it.joinToString("; ")) }
-    return BingoGame(draw, boards)
+    //    boards.forEach { println(it.joinToString("; ")) }
+    val bingoGame = BingoGameImpl(draw, boards.map { BingoBoardImpl(it) })
+    bingoGame.printGame()
+    return bingoGame
 }
