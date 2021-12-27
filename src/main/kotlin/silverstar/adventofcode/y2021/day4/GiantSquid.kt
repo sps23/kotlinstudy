@@ -59,6 +59,7 @@ To guarantee victory against the giant squid, figure out which board will win fi
 
 fun main() {
 
+    // Part 1
     val sampleInput =
         """7,4,9,5,11,17,23,2,0,14,21,24,10,16,13,6,15,25,12,22,18,20,8,19,3,26,1
 
@@ -80,32 +81,16 @@ fun main() {
 22 11 13  6  5
  2  0 12  3  7"""
 
-    println(sampleInput.toBingoGame().play())
-}
+    val input: String =
+        {}.javaClass.getResourceAsStream("/GiantSquid.txt")?.bufferedReader()?.readText() ?: ""
 
-interface BingoGame {
-    fun printGame(): Unit
-    fun canDrawNext(): Boolean
-    fun drawNext()
-    fun hasWon(): Boolean
-    fun score(): Int
-
-    fun play(): Int {
-        do {
-            printGame()
-            drawNext()
-        } while(!hasWon() && canDrawNext())
-//        while (!hasWon() && canDrawNext()) {
-//            printGame()
-//            drawNext()
-//        }
-        return if (hasWon()) score() else -1
-    }
+    println(Bingo.playBingo(sampleInput)) // expected 4512
+    println(Bingo.playBingo(input)) // expected ???
 }
 
 interface BingoBoard {
     val boardSize: Int
-    fun printBoard(): Unit
+    fun printBoard()
     fun mark(number: Int): BingoBoard
     fun hasWon(): Boolean
     fun sumOfAllUnmarked(): Int
@@ -128,48 +113,69 @@ class BingoBoardImpl(private val board: List<Int>) : BingoBoard {
 
     private fun wonColumn(): Boolean =
         (0 until boardSize).any { col ->
-            (0 until boardSize)
-                .map { row ->
-                    val index = col + row * boardSize
-                    board.get(index)
-                }
-                .all { it < 0 }
+            (0 until boardSize).map { row -> board[col + row * boardSize] }.all { it < 0 }
         }
 
-    override fun hasWon(): Boolean {
-        println("${wonRow()}; ${wonColumn()}")
-        return wonRow() || wonColumn()
-    }
+    override fun hasWon(): Boolean = wonRow() || wonColumn()
 
     override fun sumOfAllUnmarked(): Int {
-        return board.sumOf { if(it > 0) it else 0 }
+        return board.sumOf { if (it > 0) it else 0 }
     }
 }
 
-class BingoGameImpl(private val draw: List<Int>, private val boards: List<BingoBoard>, currentNumber: Int? = null) : BingoGame {
-    private var currentDraw = draw.toList()
-    private var currentBoards = boards.toList()
+interface BingoGame {
+    fun printGame()
+    fun canDrawNext(): Boolean
+    fun drawNext(): BingoGame
+    fun hasWon(): Boolean
+    fun score(): Int
+}
+
+class BingoGameImpl(
+    private val draw: List<Int>,
+    private val boards: List<BingoBoard>,
+    private val lastDraw: Int? = null
+) : BingoGame {
 
     override fun printGame() {
-        currentBoards.forEach { it.printBoard() }
-        println(currentDraw.joinToString("; "))
+        boards.forEach { it.printBoard() }
+        println(draw.joinToString("; "))
         println()
     }
 
-    override fun canDrawNext(): Boolean = currentDraw.isNotEmpty()
+    override fun canDrawNext(): Boolean = draw.isNotEmpty()
 
-    override fun drawNext() {
-        val number = currentDraw.firstOrNull()
-        if (number != null) {
-            currentDraw = currentDraw.drop(1)
-            currentBoards = currentBoards.map { it.mark(number) }
+    override fun drawNext(): BingoGame {
+        val number = draw.firstOrNull()
+        return if (number != null) {
+            val nextDraw = draw.drop(1)
+            val nextBoards: List<BingoBoard> = boards.map { it.mark(number) }
+            BingoGameImpl(nextDraw, nextBoards, number)
+        } else {
+            this
         }
     }
 
-    override fun hasWon(): Boolean = currentBoards.any { it.hasWon() }
+    override fun hasWon(): Boolean = boards.any { it.hasWon() }
 
-    override fun score(): Int =
-        currentBoards.firstOrNull { it.hasWon() }?.score(currentDraw.first()) ?: -1
+    override fun score(): Int {
+        val winningBoard = boards.firstOrNull { it.hasWon() }
+        return if (lastDraw != null && winningBoard != null) {
+            winningBoard.score(lastDraw)
+        } else -1
+    }
+}
+
+object Bingo {
+    private fun playIter(bingoGame: BingoGame): BingoGame =
+        if (!bingoGame.hasWon() && bingoGame.canDrawNext()) {
+            playIter(bingoGame.drawNext())
+        } else bingoGame
+
+    fun playBingo(input: String): Int {
+        val init = input.toBingoGame()
+        return playIter(init).score()
+    }
 }
 
 fun String.toBingoGame(): BingoGameImpl {
@@ -177,7 +183,6 @@ fun String.toBingoGame(): BingoGameImpl {
     val draw: List<Int> = split.first().split(',').map { it.trim().toInt() }
     val boards: List<List<Int>> =
         split.drop(1).map { it.trim().split("\\s+".toRegex()).map { it.trim().toInt() } }
-    //    boards.forEach { println(it.joinToString("; ")) }
     val bingoGame = BingoGameImpl(draw, boards.map { BingoBoardImpl(it) })
     bingoGame.printGame()
     return bingoGame
